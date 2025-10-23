@@ -1,24 +1,134 @@
-import { View, Text, StyleSheet } from 'react-native';
-import React from 'react';
+import { View, StyleSheet, Alert, Dimensions, Image, Text } from "react-native";
+import { FlashList } from "@shopify/flash-list";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useState } from "react";
+import { runOnJS } from "react-native-reanimated";
+import { homeFeed } from "@/placeholder";
 
-// Screen component displaying the user's favorite items
-export default function FavoritesScreen() {
+const { width } = Dimensions.get("window");
+
+interface FeedItem {
+  image: string;
+  caption: string;
+  id: string;
+  createdBy: string;
+}
+
+interface ImageItemProps {
+  item: FeedItem;
+}
+
+function ImageItem({ item }: ImageItemProps) {
+  const [showCaption, setShowCaption] = useState(false);
+
+  const handleDoubleTap = () => {
+    Alert.alert("Double Tap", "You double tapped the image!");
+  };
+
+  const handleLongPress = () => {
+    setShowCaption(true);
+  };
+
+  const handlePressEnd = () => {
+    setShowCaption(false);
+  };
+
+  const doubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .onStart(() => {
+      runOnJS(handleDoubleTap)();
+    });
+
+  const longPress = Gesture.LongPress()
+    .minDuration(500)
+    .onStart(() => {
+      runOnJS(handleLongPress)();
+    })
+    .onEnd(() => {
+      runOnJS(handlePressEnd)();
+    });
+
+  const composed = Gesture.Race(doubleTap, longPress);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Favorites Screen</Text>
+    <View style={styles.imageContainer}>
+      <GestureDetector gesture={composed}>
+        <View style={styles.imageWrapper}>
+          <Image
+            source={{ uri: item.image }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+          {showCaption && (
+            <View style={styles.captionOverlay}>
+              <Text style={styles.captionText}>{item.caption}</Text>
+            </View>
+          )}
+        </View>
+      </GestureDetector>
     </View>
   );
 }
 
-// Styles for layout and text
+export default function FavoritesScreen() {
+  const renderItem = ({ item }: { item: FeedItem }) => <ImageItem item={item} />;
+
+  return (
+    <View style={styles.container}>
+      <FlashList
+        data={homeFeed}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        decelerationRate="normal"
+        contentContainerStyle={{ paddingBottom: 100 }}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center', // Center content vertically
-    alignItems: 'center', // Center content horizontally
+    backgroundColor: "#fff",
   },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 60,
+    paddingBottom: 16,
+    backgroundColor: "#fff",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  imageWrapper: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  captionOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 15,
+  },
+  captionText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });

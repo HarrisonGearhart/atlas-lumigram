@@ -1,99 +1,117 @@
-import { Tabs, useRouter } from 'expo-router';
-import React from 'react';
-import { Platform, Pressable, Text } from 'react-native';
+import { Tabs } from "expo-router";
+import React from "react";
+import { Platform } from "react-native";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { HapticTab } from "@/components/HapticTab";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import TabBarBackground from "@/components/ui/TabBarBackground";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import LogoutComponent from "@/components/LogoutComponent";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const router = useRouter(); // Used for screen navigation
-
-  // Component for rendering a logout button in the header
-  const LogoutButton = () => (
-    <Pressable
-      onPress={() => router.replace('/login')}
-      style={{ marginRight: 15 }}
-    >
-      <Text
-        style={{
-          color: Colors[colorScheme ?? 'light'].tint,
-          fontWeight: 'bold',
-        }}
-      >
-        Logout
-      </Text>
-    </Pressable>
-  );
+  const colorScheme = useColorScheme(); // Determine current theme (light or dark)
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        headerRight: () => <LogoutButton />, // Display logout in the header
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        headerShown: true,
+        headerTitleAlign: "left", // Align title to the left
+        tabBarButton: HapticTab, // Apply haptic feedback for tab presses
+        headerRight: () => <LogoutComponent />, // Logout button in header
+        tabBarBackground: TabBarBackground, // Custom tab bar background
         tabBarStyle: Platform.select({
-          ios: { position: 'absolute' },
+          ios: {
+            // Transparent tab bar on iOS for blur effect
+            position: "absolute",
+          },
           default: {},
         }),
       }}
     >
-      {/* Home screen tab */}
+      {/* Home Feed Tab */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+          title: "Home Feed",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              size={28}
+              name={focused ? "home" : "home-outline"}
+              color={color}
+            />
           ),
         }}
       />
 
-      {/* Explore/Search tab */}
+      {/* Search Tab */}
       <Tabs.Screen
-        name="explore"
+        name="search"
         options={{
-          title: 'Search',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="magnifyingglass" color={color} />
+          title: "Search",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              size={28}
+              name={focused ? "search" : "search-outline"}
+              color={color}
+            />
           ),
         }}
       />
 
-      {/* Tab for adding a new post */}
+      {/* Add Post Tab */}
       <Tabs.Screen
-        name="add-post"
+        name="addpost"
         options={{
-          title: 'Add Post',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="plus.circle.fill" color={color} />
+          title: "Add Post",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              size={28}
+              name={focused ? "add" : "add-outline"}
+              color={color}
+            />
           ),
         }}
       />
 
-      {/* Favorites tab */}
+      {/* Favorites Tab */}
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="heart.fill" color={color} />
+          title: "Favorites",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              size={28}
+              name={focused ? "heart" : "heart-outline"}
+              color={color}
+            />
           ),
         }}
       />
 
-      {/* User profile tab */}
+      {/* Profile Tab (default) */}
       <Tabs.Screen
-        name="profile"
+        name="profile/index"
         options={{
-          title: 'My Profile',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+          title: "My Profile",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              size={28}
+              name={focused ? "person" : "person-outline"}
+              color={color}
+            />
           ),
+        }}
+      />
+
+      {/* Profile Tab (dynamic user ID, hidden from tab bar) */}
+      <Tabs.Screen
+        name="profile/[id]"
+        options={{
+          title: "My Profile",
+          href: null, // Prevent this route from showing in the tab bar
         }}
       />
     </Tabs>
