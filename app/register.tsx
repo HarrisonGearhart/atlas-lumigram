@@ -1,25 +1,33 @@
 import { Text, View, StyleSheet, Pressable, TextInput, Image } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Page() {
   const router = useRouter();
-  const [email, setEmail] = useState(""); // Stores the user's email input
-  const [password, setPassword] = useState(""); // Stores the user's password input
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const auth = useAuth();
+
+  async function register() {
+    try {
+      await auth.register(email, password);
+      router.replace("/(tabs)");
+    } catch (err) {
+      alert(`Unable to create account`);
+    }
+  }
 
   return (
     <View style={styles.container}>
-      {/* Display the app logo */}
       <Image
         source={require("../assets/images/logo.png")}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Page title */}
       <Text style={styles.title}>Register</Text>
 
-      {/* Email input field */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -31,27 +39,21 @@ export default function Page() {
         autoCorrect={false}
       />
 
-      {/* Password input field */}
       <TextInput
         style={styles.input}
         placeholder="Password"
         placeholderTextColor="#999"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={true}
         autoCapitalize="none"
         autoCorrect={false}
       />
 
-      {/* Button to create account and navigate to main tabs */}
-      <Pressable
-        style={styles.createAccountButton}
-        onPress={() => router.replace("/(tabs)")}
-      >
+      <Pressable style={styles.createAccountButton} onPress={register}>
         <Text style={styles.createAccountButtonText}>Create Account</Text>
       </Pressable>
 
-      {/* Link to navigate back to login screen */}
       <Link href="/login" replace asChild>
         <Pressable style={styles.loginLink}>
           <Text style={styles.loginText}>Login to an existing account</Text>

@@ -1,25 +1,33 @@
 import { Text, View, StyleSheet, Pressable, TextInput, Image } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Page() {
   const router = useRouter();
-  const [email, setEmail] = useState(""); // Stores the user's email input
-  const [password, setPassword] = useState(""); // Stores the user's password input
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const auth = useAuth();
+
+  async function login() {
+    try {
+      await auth.login(email, password);
+      router.replace("/(tabs)");
+    } catch (err) {
+      alert(`Unable to login with ${email}, is your password correct?`);
+    }
+  }
 
   return (
     <View style={styles.container}>
-      {/* App logo */}
       <Image
         source={require("../assets/images/logo.png")}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Page title */}
       <Text style={styles.title}>Login</Text>
 
-      {/* Email input field */}
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -31,7 +39,6 @@ export default function Page() {
         autoCorrect={false}
       />
 
-      {/* Password input field */}
       <TextInput
         style={styles.input}
         placeholder="Password"
@@ -43,17 +50,10 @@ export default function Page() {
         autoCorrect={false}
       />
 
-      {/* Sign-in button */}
-      <Pressable
-        style={styles.signInButton}
-        onPress={() => {
-          router.replace("/(tabs)");
-        }}
-      >
+      <Pressable style={styles.signInButton} onPress={login}>
         <Text style={styles.signInButtonText}>Sign In</Text>
       </Pressable>
 
-      {/* Link to navigate to registration screen */}
       <Link href="/register" replace asChild>
         <Pressable style={styles.createAccountLink}>
           <Text style={styles.createAccountText}>Create a new account</Text>
