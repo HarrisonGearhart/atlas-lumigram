@@ -1,5 +1,5 @@
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, orderBy, serverTimestamp, Timestamp, limit, startAfter, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 // Post data structure
 export interface Post {
@@ -22,30 +22,30 @@ async function createPost(data: { imageUrl?: string; caption: string; createdBy:
   return docRef.id;
 }
 
-// Get all posts
-async function getAllPosts(): Promise<Post[]> {
-  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-  const querySnapshot = await getDocs(q);
+// Get all posts with pagination
+async function getAllPosts(
+  lastDoc?: QueryDocumentSnapshot<DocumentData>,
+  pageSize: number = 10
+): Promise<{ posts: Post[]; lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
+  let q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(pageSize));
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Post[];
+  if (lastDoc) {
+    q = query(collection(db, "posts"), orderBy("createdAt", "desc"), startAfter(lastDoc), limit(pageSize));
+  }
+
+  const querySnapshot = await getDocs(q);
+  const posts = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
+  const newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+
+  return { posts, lastDoc: newLastDoc };
 }
 
 // Get posts by a specific user
 async function getPostsByUser(userId: string): Promise<Post[]> {
-  const q = query(
-    collection(db, "posts"),
-    where("createdBy", "==", userId),
-    orderBy("createdAt", "desc")
-  );
+  const q = query(collection(db, "posts"), where("createdBy", "==", userId), orderBy("createdAt", "desc"));
   const querySnapshot = await getDocs(q);
 
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Post[];
+  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Post[];
 }
 
 // Get a single post by ID
