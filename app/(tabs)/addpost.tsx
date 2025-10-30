@@ -1,36 +1,62 @@
-import { Text, View, StyleSheet, Pressable, Image, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { Text, View, StyleSheet, Pressable, Image, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from "react-native";
 import { useState } from "react";
 import { useImagePicker } from "@/hooks/useImagePicker";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@/components/AuthProvider";
+import firestore from "@/lib/firestore";
+import storage from "@/lib/storage";
 
 export default function Page() {
-  const { image, openImagePicker, reset } = useImagePicker(); // Image picker hook
-  const [caption, setCaption] = useState(""); // Post caption state
+  const { image, openImagePicker, reset } = useImagePicker();
+  const [caption, setCaption] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const { user } = useAuth();
 
-  // Save post with validation
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!image) {
-      Alert.alert("No Image", "Please select an image first."); // Image is required
+      Alert.alert("No Image", "Please select an image first.");
       return;
     }
 
     if (!caption.trim()) {
-      Alert.alert("No Caption", "Please add a caption for your post."); // Caption is required
+      Alert.alert("No Caption", "Please add a caption for your post.");
       return;
     }
 
-    Alert.alert("Post Saved!", `${caption}`, [
-      {
-        text: "OK",
-        onPress: () => {
-          reset(); // Reset image
-          setCaption(""); // Clear caption
+    if (!user) {
+      Alert.alert("Not Authenticated", "Please log in to create a post.");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const filename = `posts/${user.uid}/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const { downloadUrl } = await storage.upload(image!, filename);
+
+      await firestore.createPost({
+        imageUrl: downloadUrl,
+        caption: caption.trim(),
+        createdBy: user.uid,
+      });
+
+      Alert.alert("Success", "Your post has been created!", [
+        {
+          text: "OK",
+          onPress: () => {
+            reset();
+            setCaption("");
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (error) {
+      console.error("Error uploading post:", error);
+      Alert.alert("Error", "Failed to upload post. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  // Reset image and caption
   const handleReset = () => {
     reset();
     setCaption("");
@@ -46,7 +72,6 @@ export default function Page() {
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Image display area */}
           <View style={styles.imageContainer}>
             {image ? (
               <Image source={{ uri: image }} style={styles.selectedImage} />
@@ -57,20 +82,13 @@ export default function Page() {
             )}
           </View>
 
-          {/* Choose photo button */}
           {!image && (
             <Pressable style={styles.chooseButton} onPress={openImagePicker}>
-              <Ionicons
-                name="image"
-                size={20}
-                color="#fff"
-                style={styles.buttonIcon}
-              />
+              <Ionicons name="image" size={20} color="#fff" style={styles.buttonIcon} />
               <Text style={styles.chooseButtonText}>Choose a photo</Text>
             </Pressable>
           )}
 
-          {/* Caption input and actions */}
           {image && (
             <>
               <TextInput
@@ -83,24 +101,28 @@ export default function Page() {
                 numberOfLines={3}
                 textAlignVertical="top"
                 returnKeyType="done"
-                blurOnSubmit
+                blurOnSubmit={true}
               />
 
-              {/* Save post button */}
               <Pressable
                 style={[
                   styles.saveButton,
-                  !caption.trim() && styles.saveButtonDisabled,
+                  (!caption.trim() || isUploading) && styles.saveButtonDisabled,
                 ]}
                 onPress={handleSave}
-                disabled={!caption.trim()}
+                disabled={!caption.trim() || isUploading}
               >
-                <Text style={styles.saveButtonText}>Save</Text>
+                {isUploading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
+                )}
               </Pressable>
 
-              {/* Reset button */}
-              <Pressable style={styles.resetButton} onPress={handleReset}>
-                <Text style={styles.resetButtonText}>Reset</Text>
+              <Pressable style={styles.resetButton} onPress={handleReset} disabled={isUploading}>
+                <Text style={[styles.resetButtonText, isUploading && styles.resetButtonDisabled]}>
+                  Reset
+                </Text>
               </Pressable>
             </>
           )}
@@ -196,5 +218,8 @@ const styles = StyleSheet.create({
     color: "#000",
     fontSize: 16,
     marginTop: 10,
+  },
+  resetButtonDisabled: {
+    opacity: 0.5,
   },
 });
