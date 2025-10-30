@@ -8,6 +8,7 @@ import "react-native-reanimated";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { AuthProvider } from "@/components/AuthProvider";
 
 // Keep splash screen visible until fonts and assets are loaded
 SplashScreen.preventAutoHideAsync();
@@ -31,23 +32,25 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          {/* Authentication screens */}
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
+    <AuthProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+                <Stack>
+                    {/* Authentication screens */}
+                     <Stack.Screen name="login" options={{ headerShown: false }} />
+                    <Stack.Screen name="register" options={{ headerShown: false }} />
 
-          {/* Main tab layout */}
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    {/* Main tab layout */}
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-          {/* Fallback for unknown routes */}
-          <Stack.Screen name="+not-found" />
-        </Stack>
+                    {/* Fallback for unknown routes */}
+                    <Stack.Screen name="+not-found" />
+                 </Stack>
 
-        {/* System status bar */}
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </GestureHandlerRootView>
+                {/* System status bar */}
+                <StatusBar style="auto" />
+            </ThemeProvider>
+        </GestureHandlerRootView>
+    </AuthProvider>
   );
 }
